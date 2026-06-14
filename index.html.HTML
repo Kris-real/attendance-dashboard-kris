@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Attendance Command Center</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #000000;                 /* full black background */
+      --bg-elevated: #121212;        /* Spotify-style cards */
+      --bg-elevated-soft: #181818;
+      --accent: #1db954;             /* Spotify green */
+      --accent-soft: rgba(29, 185, 84, 0.16);
+      --accent-strong: #24e073;
+      --danger: #ff6b88;
+      --danger-soft: rgba(255, 107, 136, 0.12);
+      --warn: #ffb86b;
+      --ok: #1db954;                 /* also use green for OK */
+      --text: #ffffff;
+      --muted: #a7a7a7;
+      --border-subtle: #282828;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 24px 60px rgba(0, 0, 0, 0.9);
+      --shadow-subtle: 0 18px 40px rgba(0, 0, 0, 0.9);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #18181b 0, #000000 50%, #000000 100%);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 18px 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      backdrop-filter: blur(22px);
+      background: rgba(0, 0, 0, 0.85);
+      border-bottom: 1px solid rgba(40, 40, 40, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 30% 0, #1db954, #121212);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo::after {
+      content: "";
+      width: 74%;
+      height: 74%;
+      border-radius: 10px;
+      background: #000000;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      font-size: 12px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.35);
+    }
+
+    .btn {
+      border-radius: var(--radius-pill);
+      padding: 8px 14px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.18s ease-out;
+      background: none;
+      color: var(--text);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1db954, #24e073);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.9);
+    }
+
+    .btn-ghost {
+      border-color: #282828;
+      background: #181818;
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: #3a3a3a;
+      color: var(--text);
+      background: #202020;
+    }
+
+    main {
+      flex: 1;
+      padding: 14px 18px 26px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.3fr);
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 920px) {
+      .layout-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(40, 40, 40, 0.9);
+      box-shadow: var(--shadow-subtle);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .pill-tag {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-tag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 99px;
+      background: var(--ok);
+      box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.35);
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 720px) {
+      .overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .overview-main {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .donut-shell {
+      width: 132px;
+      height: 132px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #181818, #000000);
+      border: 1px solid #282828;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .donut-ring {
+      width: 106px;
+      height: 106px;
+      border-radius: 999px;
+      background: conic-gradient(
+        from 270deg,
+        #1db954 0deg,
+        #24e073 220deg,
+        #1db954 360deg
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .donut-mask {
+      position: absolute;
+      inset: 10px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #000000, #000000);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .donut-fill {
+      position: absolute;
+      inset: 0;
+      background: conic-gradient(
+        from 270deg,
+        #1db954 0deg,
+        #24e073 220deg,
+        transparent 220deg
+      );
+      mask:
+        radial-gradient(farthest-side, transparent 63%, #000 64%)
+        center/100% 100% no-repeat,
+        linear-gradient(#000 0 0);
+      -webkit-mask:
+        radial-gradient(farthest-side, transparent 63%, #000 64%)
+        center/100% 100% no-repeat,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      transform: rotate(0deg);
+      transform-origin: 50% 50%;
+      transition: transform 0.26s ease-out;
+    }
+
+    .donut-center {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 20% 0, #181818, #000000);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 10px 30px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+    }
+
+    .donut-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .donut-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .overview-metrics {
+      flex: 1;
+      display: grid;
+      gap: 8px;
+    }
+
+    .metric-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font-weight: 500;
+    }
+
+    .metric-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(29, 185, 84, 0.14);
+      border: 1px solid rgba(29, 185, 84, 0.75);
+      color: var(--ok);
+    }
+
+    .metric-badge-danger {
+      background: var(--danger-soft);
+      border-color: rgba(255, 107, 136, 0.8);
+      color: var(--danger);
+    }
+
+    .overview-secondary {
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid #282828;
+      background: #181818;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .overview-secondary {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .stack-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .stack-label strong {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .stack-bar {
+      width: 100%;
+      height: 8px;
+      border-radius: var(--radius-pill);
+      background: #000000;
+      border: 1px solid #282828;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .stack-fill {
+      height: 100%;
+      transition: width 0.2s ease-out;
+    }
+
+    .stack-fill.attended {
+      background: linear-gradient(90deg, #1db954, #24e073);
+    }
+
+    .stack-fill.bunked {
+      background: linear-gradient(90deg, #ff6b88, #ffb86b);
+    }
+
+    .stack-legend {
+      display: flex;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .dot-attended {
+      background: #1db954;
+    }
+
+    .dot-bunked {
+      background: #ff6b88;
+    }
+
+    .dot-planned {
+      background: #ffb86b;
+    }
+
+    .command-card {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: #181818;
+      border: 1px solid #282828;
+      position: relative;
+      z-index: 1;
+    }
+
+    .command-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 640px) {
+      .command-row {
+        flex-direction: column;
+      }
+    }
+
+    .command-input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid #282828;
+      background: #181818;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      min-width: 0;
+    }
+
+    .command-input::placeholder {
+      color: #a7a7a7;
+    }
+
+    .command-input:focus {
+      border-color: #3a3a3a;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .command-hint {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .command-hint code {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      background: #121212;
+      border-radius: 8px;
+      padding: 2px 6px;
+      border: 1px solid #282828;
+      color: #e5e5e5;
+    }
+
+    .subjects-card {
+      margin-top: 18px;
+    }
+
+    .subjects-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .subjects-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .subjects-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .filter-pill {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.16s ease-out;
+    }
+
+    .filter-pill.active {
+      background: rgba(29, 185, 84, 0.18);
+      border-color: rgba(29, 185, 84, 0.9);
+      color: var(--text);
+    }
+
+    .small-input {
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+
+    .small-input::placeholder {
+      color: #a7a7a7;
+    }
+
+    .small-input:focus {
+      border-color: #3a3a3a;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .subjects-table-wrapper {
+      border-radius: var(--radius-md);
+      border: 1px solid #282828;
+      background: #181818;
+      overflow: hidden;
+    }
+
+    .subjects-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .subjects-table thead {
+      background: #000000;
+    }
+
+    .subjects-table th,
+    .subjects-table td {
+      padding: 7px 8px;
+      text-align: left;
+      border-bottom: 1px solid #282828;
+      vertical-align: middle;
+    }
+
+    .subjects-table th {
+      font-weight: 500;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .subjects-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pill-status {
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      border: 1px solid #282828;
+      background: #181818;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+    }
+
+    .pill-status.risky {
+      border-color: rgba(255, 107, 136, 0.9);
+      background: rgba(255, 107, 136, 0.12);
+      color: var(--danger);
+    }
+
+    .pill-status.safe {
+      border-color: rgba(29, 185, 84, 0.9);
+      background: rgba(29, 185, 84, 0.15);
+      color: var(--ok);
+    }
+
+    .pill-status.mid {
+      border-color: rgba(255, 184, 107, 0.9);
+      background: rgba(255, 184, 107, 0.13);
+      color: var(--warn);
+    }
+
+    .mini-bar {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: #000000;
+      overflow: hidden;
+      border: 1px solid #282828;
+    }
+
+    .mini-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1db954, #24e073);
+      transition: width 0.18s ease-out;
+    }
+
+    .mini-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 0, #181818, #000000);
+      border: 1px solid #282828;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mini-circle::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: conic-gradient(
+        from 270deg,
+        #1db954 0deg,
+        #24e073 220deg,
+        transparent 220deg
+      );
+      transform: rotate(0deg);
+      transform-origin: 50% 50%;
+      transition: transform 0.2s ease-out;
+    }
+
+    .mini-circle-inner {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 0, #181818, #000000);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .mini-circle-mask {
+      position: absolute;
+      inset: 3px;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 0, #000000, #000000);
+    }
+
+    .mini-input {
+      width: 60px;
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      padding: 3px 8px;
+      color: var(--text);
+      font-size: 11px;
+      outline: none;
+    }
+
+    .mini-input:focus {
+      border-color: #3a3a3a;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .delete-btn {
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(138, 72, 90, 0.9);
+      background: #2a0a15;
+      color: var(--danger);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .add-card {
+      background: var(--bg-elevated-soft);
+      border-radius: var(--radius-lg);
+      border: 1px solid #282828;
+      padding: 12px 14px;
+      box-shadow: var(--shadow-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .add-card::before {
+      content: none;
+    }
+
+    .add-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .add-header-title {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .add-header-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .add-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 0.7fr));
+      gap: 6px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 720px) {
+      .add-grid {
+        grid-template-columns: minmax(0, 1fr) repeat(3, minmax(0, 0.65fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .add-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .add-input {
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+
+    .add-input::placeholder {
+      color: #a7a7a7;
+    }
+
+    .add-input:focus {
+      border-color: #3a3a3a;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .add-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .add-hint {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .add-hint strong {
+      color: var(--text);
+    }
+
+    .small-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .export-card {
+      background: var(--bg-elevated-soft);
+      border-radius: var(--radius-lg);
+      border: 1px solid #282828;
+      padding: 12px 14px;
+      box-shadow: var(--shadow-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .export-card::before {
+      content: none;
+    }
+
+    .export-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .export-title {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .export-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .export-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-mini {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      background: #181818;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-mini.primary {
+      background: #1db954;
+      border-color: #1db954;
+      color: #000000;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #181818;
+      border: 1px solid #282828;
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.8);
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transform-origin: center;
+      transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    .toast-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #1db954, #121212);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .toast-msg {
+      white-space: nowrap;
+    }
+
+    .pill-mini {
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: var(--radius-pill);
+      border: 1px solid #282828;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="brand">
+        <div class="brand-logo"></div>
+        <div class="brand-text">
+          <div class="brand-title">Attendance Command Center</div>
+          <div class="brand-subtitle">MBBS · Smart tracking · Safe bunks</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="chip">
+          <span class="chip-dot"></span>
+          Live block · Auto saved to this device
+        </div>
+        <button class="btn btn-ghost" id="resetBtn">
+          Reset block
+        </button>
+        <button class="btn btn-primary" id="loadSampleBtn">
+          Load student data
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="layout-grid">
+        <div>
+          <section class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-title">Overview</div>
+                <div class="card-subtitle" id="overviewSubtitle">
+                  Live lectures · Target ≥ 80% in every subject
+                </div>
+              </div>
+              <div class="pill-tag">
+                <span class="pill-tag-dot"></span>
+                <span id="eligibilityLabel">Exam eligibility: pending</span>
+              </div>
+            </div>
+
+            <div class="overview-grid">
+              <div class="overview-main">
+                <div class="donut-shell">
+                  <div class="donut-ring">
+                    <div class="donut-fill" id="donutFill"></div>
+                    <div class="donut-mask"></div>
+                    <div class="donut-center">
+                      <div class="donut-value" id="overallPercent">0%</div>
+                      <div class="donut-label">overall</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="overview-metrics">
+                  <div class="metric-line">
+                    <span class="metric-label">Classes attended</span>
+                    <span class="metric-value" id="attendedLabel">0</span>
+                  </div>
+                  <div class="metric-line">
+                    <span class="metric-label">Total classes (planned)</span>
+                    <span class="metric-value" id="plannedLabel">0</span>
+                  </div>
+                  <div class="metric-line">
+                    <span class="metric-label">
+                      Subjects at risk
+                    </span>
+                    <span class="metric-value">
+                      <span id="riskyCount">0</span>
+                      <span class="metric-badge metric-badge-danger" id="riskBadge">
+                        Focus
+                      </span>
+                    </span>
+                  </div>
+                  <div class="metric-line">
+                    <span class="metric-label">Safe bunks (approx.)</span>
+                    <span class="metric-value">
+                      <span id="safeCount">0</span>
+                      <span class="metric-badge" id="safeBadge">
+                        Safe zone
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="overview-secondary">
+                <div>
+                  <div class="stack-label">
+                    <span>Attendance mix</span>
+                    <span>
+                      <strong id="mixLabel">0 / 0</strong>
+                    </span>
+                  </div>
+                  <div class="stack-bar">
+                    <div class="stack-fill attended" id="attendedBar" style="width: 0%;"></div>
+                    <div class="stack-fill bunked" id="bunkedBar" style="width: 0%;"></div>
+                  </div>
+                  <div class="stack-legend">
+                    <span><span class="dot dot-attended"></span>Attended</span>
+                    <span><span class="dot dot-bunked"></span>Bunked</span>
+                  </div>
+                </div>
+                <div>
+                  <div class="stack-label">
+                    <span>Target per subject</span>
+                    <span>
+                      <strong id="targetLabel">80%</strong>
+                    </span>
+                  </div>
+                  <div class="stack-bar">
+                    <div class="stack-fill attended" id="targetBar" style="width: 80%;"></div>
+                  </div>
+                  <div class="stack-legend">
+                    <span><span class="dot dot-planned"></span>Target per subject</span>
+                    <span class="pill-mini">
+                      <span id="safeLabel">80</span>% threshold · hard floor
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="command-card">
+              <div class="command-row">
+                <input
+                  id="commandInput"
+                  class="command-input"
+                  placeholder='Type: "I bunked General Medicine and ENT" or "I attended OBGYN twice"'
+                />
+                <button class="btn btn-primary" id="commandBtn">Update</button>
+              </div>
+              <div class="command-hint">
+                Examples:
+                <code>I bunked General Medicine and ENT</code>
+                <code>I attended OBGYN twice</code>
+                <code>I attended 2 General Surgery and 1 Paediatrics</code>
+              </div>
+            </div>
+
+            <div class="subjects-card">
+              <div class="subjects-toolbar">
+                <div class="subjects-toolbar-left">
+                  <span class="card-subtitle">Subjects</span>
+                  <button class="filter-pill active" data-filter="all">
+                    All
+                  </button>
+                  <button class="filter-pill" data-filter="risky">
+                    <span class="dot dot-bunked"></span>
+                    <span id="riskyChipLabel">Risky</span>
+                  </button>
+                  <button class="filter-pill" data-filter="core">
+                    Core only
+                  </button>
+                </div>
+                <div class="subjects-toolbar-right">
+                  <input
+                    id="searchInput"
+                    class="small-input"
+                    placeholder="Search subject"
+                  />
+                </div>
+              </div>
+              <div class="subjects-table-wrapper">
+                <table class="subjects-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 18%;">Subject</th>
+                      <th style="width: 12%;">Attended</th>
+                      <th style="width: 12%;">Total</th>
+                      <th style="width: 12%;">Planned</th>
+                      <th style="width: 10%;">%</th>
+                      <th style="width: 14%;">Safe</th>
+                      <th style="width: 14%;">Status</th>
+                      <th style="width: 8%;">Circle</th>
+                      <th style="width: 10%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="subjectsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="right-column">
+          <section class="add-card">
+            <div class="add-header">
+              <div>
+                <div class="add-header-title">Add subject</div>
+                <div class="add-header-sub">
+                  Add with attended, total so far, and total to be conducted.
+                </div>
+              </div>
+            </div>
+            <div class="add-grid">
+              <input
+                id="newName"
+                class="add-input"
+                placeholder="Subject (e.g., General Medicine)"
+              />
+              <input
+                id="newAttended"
+                type="number"
+                min="0"
+                class="add-input"
+                placeholder="Attended"
+              />
+              <input
+                id="newTotal"
+                type="number"
+                min="0"
+                class="add-input"
+                placeholder="Current total"
+              />
+              <input
+                id="newPlanned"
+                type="number"
+                min="0"
+                class="add-input"
+                placeholder="Total to be conducted"
+              />
+            </div>
+            <div class="add-footer">
+              <div class="add-hint">
+                Tip: set <strong>Total to be conducted</strong> for safe bunk calculations.
+              </div>
+              <button class="btn btn-primary" id="addBtn">
+                Add subject
+              </button>
+            </div>
+            <div class="small-note">
+              Safe bunks = classes you can still miss and stay ≥ target, based on planned total.
+            </div>
+          </section>
+
+          <section class="export-card">
+            <div class="export-header">
+              <div>
+                <div class="export-title">Backup & sharing</div>
+                <div class="export-sub">
+                  Save to JSON, reload on any device, or share with friends.
+                </div>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button class="btn-mini primary" id="exportBtn">
+                Export JSON
+              </button>
+              <button class="btn-mini" id="importBtn">
+                Import JSON
+              </button>
+              <button class="btn-mini" id="clearStorageBtn">
+                Clear local storage
+              </button>
+              <input
+                type="file"
+                id="fileInput"
+                class="file-input"
+                accept=".json,application/json"
+              />
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <div class="toast" id="toast">
+      <div class="toast-icon">✓</div>
+      <div class="toast-msg" id="toastMsg">Saved</div>
+    </div>
+  </div>
+
+  <script>
+    const subjectsBody = document.getElementById("subjectsBody");
+    const overallPercentEl = document.getElementById("overallPercent");
+    const attendedLabel = document.getElementById("attendedLabel");
+    const plannedLabel = document.getElementById("plannedLabel");
+    const riskyCountEl = document.getElementById("riskyCount");
+    const safeCountEl = document.getElementById("safeCount");
+    const mixLabel = document.getElementById("mixLabel");
+    const attendedBar = document.getElementById("attendedBar");
+    const bunkedBar = document.getElementById("bunkedBar");
+    const targetLabel = document.getElementById("targetLabel");
+    const targetBar = document.getElementById("targetBar");
+    const safeLabel = document.getElementById("safeLabel");
+    const donutFill = document.getElementById("donutFill");
+    const eligibilityLabel = document.getElementById("eligibilityLabel");
+    const overviewSubtitle = document.getElementById("overviewSubtitle");
+    const riskBadge = document.getElementById("riskBadge");
+    const safeBadge = document.getElementById("safeBadge");
+    const riskyChipLabel = document.getElementById("riskyChipLabel");
+
+    const commandInput = document.getElementById("commandInput");
+    const commandBtn = document.getElementById("commandBtn");
+
+    const newName = document.getElementById("newName");
+    const newAttended = document.getElementById("newAttended");
+    const newTotal = document.getElementById("newTotal");
+    const newPlanned = document.getElementById("newPlanned");
+    const addBtn = document.getElementById("addBtn");
+
+    const resetBtn = document.getElementById("resetBtn");
+    const loadSampleBtn = document.getElementById("loadSampleBtn");
+
+    const exportBtn = document.getElementById("exportBtn");
+    const importBtn = document.getElementById("importBtn");
+    const clearStorageBtn = document.getElementById("clearStorageBtn");
+    const fileInput = document.getElementById("fileInput");
+
+    const searchInput = document.getElementById("searchInput");
+    const filterPills = document.querySelectorAll(".filter-pill");
+
+    const toastEl = document.getElementById("toast");
+    const toastMsgEl = document.getElementById("toastMsg");
+
+    const STORAGE_KEY = "attendance_cc_subjects_v1";
+    let subjects = [];
+    let targetPercent = 80;
+    let activeFilter = "all";
+    let coreSubjects = [
+      "GENERAL MEDICINE",
+      "GENERAL SURGERY",
+      "OBGYN",
+      "OBSTETRICS & GYNAECOLOGY",
+      "PAEDIATRICS",
+      "PEDIATRICS",
+      "ORTHOPEDICS",
+      "ENT",
+      "OPHTHALMOLOGY",
+      "DERMATOLOGY",
+      "PSYCHIATRY",
+      "RADIOLOGY",
+      "ANESTHESIA",
+      "ANESTHESIOLOGY",
+      "PULMONOLOGY",
+      "ICU",
+      "AETCOM",
+      "PANDEMIC MODULE"
+    ];
+
+    const aliasMap = buildAliases(coreSubjects);
+
+    function normalizeName(name) {
+      return name.trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function buildAliases(list) {
+      const map = {};
+      list.forEach((s) => {
+        const norm = normalizeName(s);
+        map[norm] = norm;
+      });
+      map["gm"] = normalizeName("General Medicine");
+      map["medicine"] = normalizeName("General Medicine");
+      map["med"] = normalizeName("General Medicine");
+      map["gs"] = normalizeName("General Surgery");
+      map["surgery"] = normalizeName("General Surgery");
+      map["og"] = normalizeName("OBGYN");
+      map["obg"] = normalizeName("OBGYN");
+      map["obgyn"] = normalizeName("OBGYN");
+      map["paeds"] = normalizeName("Paediatrics");
+      map["paediatrics"] = normalizeName("Paediatrics");
+      map["pediatrics"] = normalizeName("Paediatrics");
+      map["ortho"] = normalizeName("Orthopedics");
+      map["ent"] = normalizeName("ENT");
+      map["opthal"] = normalizeName("Ophthalmology");
+      map["ophthal"] = normalizeName("Ophthalmology");
+      map["ophthalmology"] = normalizeName("Ophthalmology");
+      map["derma"] = normalizeName("Dermatology");
+      map["psy"] = normalizeName("Psychiatry");
+      map["psych"] = normalizeName("Psychiatry");
+      map["radio"] = normalizeName("Radiology");
+      map["rad"] = normalizeName("Radiology");
+      map["anes"] = normalizeName("Anesthesiology");
+      map["anaes"] = normalizeName("Anesthesiology");
+      map["pulmo"] = normalizeName("Pulmonology");
+      map["aet"] = normalizeName("AETCOM");
+      map["aetcom"] = normalizeName("AETCOM");
+      map["pandemic"] = normalizeName("Pandemic Module");
+      map["pandemic module"] = normalizeName("Pandemic Module");
+      return map;
+    }
+
+    function resolveAlias(raw) {
+      const norm = normalizeName(raw);
+      if (aliasMap[norm]) return aliasMap[norm];
+      return norm;
+    }
+
+    function showToast(message) {
+      toastMsgEl.textContent = message;
+      toastEl.classList.add("visible");
+      setTimeout(() => {
+        toastEl.classList.remove("visible");
+      }, 1800);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            subjects = parsed;
+          }
+        } catch (_) {}
+      } else {
+        subjects = [];
+      }
+    }
+
+    function computeSafeBunks(subj) {
+      const planned = subj.planned || subj.total;
+      if (!planned || planned <= 0) return 0;
+      const target = targetPercent / 100;
+      const minAttended = Math.ceil(planned * target);
+      const maxBunkedTotal = planned - minAttended;
+      const currentBunked = Math.max(subj.total - subj.attended, 0);
+      const safe = maxBunkedTotal - currentBunked;
+      return Math.max(safe, 0);
+    }
+
+    function addSubject(name, attended, total, planned) {
+      const normalized = resolveAlias(name);
+      const existing = subjects.find((s) => s.id === normalized);
+      const entry = {
+        id: normalized,
+        label: name.trim(),
+        attended: Number(attended) || 0,
+        total: Number(total) || 0,
+        planned: Number(planned) || (Number(total) || 0)
+      };
+      if (existing) {
+        existing.label = entry.label;
+        existing.attended = entry.attended;
+        existing.total = entry.total;
+        existing.planned = entry.planned;
+      } else {
+        subjects.push(entry);
+      }
+      saveState();
+      renderSubjects();
+      updateOverview();
+      showToast("Subject saved");
+    }
+
+    function applyCommand(text) {
+      const lower = text.toLowerCase();
+      let mode = null;
+      if (lower.includes("bunked")) mode = "bunked";
+      if (lower.includes("attended")) {
+        if (mode === "bunked") mode = lower.indexOf("attended") > lower.indexOf("bunked") ? "attended" : "bunked";
+        else mode = "attended";
+      }
+      if (!mode) {
+        showToast("Mention 'attended' or 'bunked'");
+        return;
+      }
+
+      const subjectSegments = lower
+        .replace(/i\b/g, "")
+        .replace(/\b(attended|bunked)\b/g, "")
+        .split(/,|and|&/i)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (!subjectSegments.length) {
+        showToast("No subjects detected");
+        return;
+      }
+
+      let anyUpdated = false;
+
+      subjectSegments.forEach((seg) => {
+        const match = seg.match(/(\d+)\s+(.+)/);
+        let count = 1;
+        let subjText = seg;
+        if (match) {
+          count = parseInt(match[1], 10);
+          subjText = match[2];
+        } else {
+          const words = seg.split(/\s+/);
+          if (words[0] && !isNaN(parseInt(words[0], 10))) {
+            count = parseInt(words[0], 10);
+            subjText = words.slice(1).join(" ");
+          }
+        }
+
+        const subjNorm = resolveAlias(subjText);
+        const subj = subjects.find((s) => s.id === subjNorm);
+        if (!subj) return;
+
+        if (mode === "attended") {
+          subj.attended = Math.min(subj.attended + count, subj.total);
+          anyUpdated = true;
+        } else if (mode === "bunked") {
+          subj.total = subj.total + count;
+          anyUpdated = true;
+        }
+      });
+
+      if (!anyUpdated) {
+        showToast("No matching subjects found");
+        return;
+      }
+      saveState();
+      renderSubjects();
+      updateOverview();
+      showToast("Updated from command");
+    }
+
+    function computeStats() {
+      let sumAttended = 0;
+      let sumTotal = 0;
+      let sumPlanned = 0;
+      let risky = 0;
+      let safeSlots = 0;
+
+      subjects.forEach((s) => {
+        sumAttended += s.attended;
+        sumTotal += s.total;
+        sumPlanned += s.planned || s.total;
+        const pct = s.total > 0 ? (s.attended / s.total) * 100 : 0;
+        if (s.total > 0 && pct < targetPercent) risky += 1;
+        safeSlots += computeSafeBunks(s);
+      });
+
+      const pctOverall = sumTotal > 0 ? (sumAttended / sumTotal) * 100 : 0;
+      return {
+        sumAttended,
+        sumTotal,
+        sumPlanned,
+        pctOverall,
+        risky,
+        safeSlots
+      };
+    }
+
+    function updateOverview() {
+      const stats = computeStats();
+      const pct = Math.round(stats.pctOverall || 0);
+
+      overallPercentEl.textContent = stats.sumTotal > 0 ? pct + "%" : "0%";
+      attendedLabel.textContent = stats.sumAttended;
+      plannedLabel.textContent = stats.sumPlanned || stats.sumTotal;
+      riskyCountEl.textContent = stats.risky;
+      safeCountEl.textContent = stats.safeSlots;
+
+      mixLabel.textContent = stats.sumTotal > 0
+        ? stats.sumAttended + " / " + stats.sumTotal
+        : "0 / 0";
+
+      const attendedRatio = stats.sumTotal > 0 ? (stats.sumAttended / stats.sumTotal) * 100 : 0;
+      attendedBar.style.width = attendedRatio.toFixed(1) + "%";
+      bunkedBar.style.width = Math.max(0, 100 - attendedRatio).toFixed(1) + "%";
+
+      targetLabel.textContent = targetPercent.toFixed(0) + "%";
+      safeLabel.textContent = targetPercent.toFixed(0);
+      targetBar.style.width = Math.min(targetPercent, 100) + "%";
+
+      const angle = (pct / 100) * 360;
+      donutFill.style.transform = "rotate(" + angle.toFixed(1) + "deg)";
+
+      if (!subjects.length) {
+        eligibilityLabel.textContent = "Exam eligibility: pending setup";
+        overviewSubtitle.textContent = "Add subjects to begin tracking this block.";
+        riskBadge.textContent = "Add subjects";
+        safeBadge.textContent = "N/A";
+        return;
+      }
+
+      const allHaveData = subjects.every((s) => s.total > 0);
+      const allEligible = subjects.every((s) =>
+        s.total === 0 ? true : (s.attended / s.total) * 100 >= targetPercent
+      );
+
+      if (!allHaveData) {
+        eligibilityLabel.textContent = "Exam eligibility: in progress";
+        overviewSubtitle.textContent = "Some subjects have 0 total classes; keep updating.";
+        riskBadge.textContent = stats.risky + " at risk";
+        safeBadge.textContent = stats.safeSlots + " safe";
+      } else if (allEligible) {
+        eligibilityLabel.textContent = "Exam eligibility: looks safe";
+        overviewSubtitle.textContent = "All subjects ≥ target; maintain and avoid late bunk spikes.";
+        riskBadge.textContent = "0 at risk";
+        safeBadge.textContent = stats.safeSlots + " safe";
+      } else {
+        eligibilityLabel.textContent = "Exam eligibility: risky";
+        overviewSubtitle.textContent = "Fix red/orange subjects below " + targetPercent + "%.";
+        riskBadge.textContent = stats.risky + " at risk";
+        safeBadge.textContent = stats.safeSlots + " safe";
+      }
+
+      riskyChipLabel.textContent = "Risky (" + stats.risky + ")";
+    }
+
+    function renderSubjects() {
+      subjectsBody.innerHTML = "";
+      const query = (searchInput.value || "").trim().toLowerCase();
+
+      subjects
+        .slice()
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .forEach((s) => {
+          const pct = s.total > 0 ? (s.attended / s.total) * 100 : 0;
+          const safe = computeSafeBunks(s);
+          const isRisky = s.total > 0 && pct < targetPercent;
+          const isMid = !isRisky && pct < targetPercent + 5 && s.total > 0;
+          const isSafe = !isRisky && !isMid && s.total > 0;
+
+          if (activeFilter === "risky" && !isRisky) return;
+          if (activeFilter === "core") {
+            const isCore = coreSubjects.some(
+              (name) => normalizeName(name) === s.id
+            );
+            if (!isCore) return;
+          }
+          if (query) {
+            const labelMatch = s.label.toLowerCase().includes(query);
+            const idMatch = s.id.includes(query);
+            if (!labelMatch && !idMatch) return;
+          }
+
+          const tr = document.createElement("tr");
+
+          const tdName = document.createElement("td");
+          tdName.textContent = s.label;
+          tr.appendChild(tdName);
+
+          const tdAtt = document.createElement("td");
+          const inputAtt = document.createElement("input");
+          inputAtt.type = "number";
+          inputAtt.className = "mini-input";
+          inputAtt.value = s.attended;
+          inputAtt.min = 0;
+          inputAtt.onchange = () => {
+            s.attended = Math.max(0, Number(inputAtt.value) || 0);
+            if (s.attended > s.total) s.attended = s.total;
+            inputAtt.value = s.attended;
+            saveState();
+            renderSubjects();
+            updateOverview();
+          };
+          tdAtt.appendChild(inputAtt);
+          tr.appendChild(tdAtt);
+
+          const tdTot = document.createElement("td");
+          const inputTot = document.createElement("input");
+          inputTot.type = "number";
+          inputTot.className = "mini-input";
+          inputTot.value = s.total;
+          inputTot.min = 0;
+          inputTot.onchange = () => {
+            s.total = Math.max(0, Number(inputTot.value) || 0);
+            if (s.attended > s.total) s.attended = s.total;
+            if (!s.planned || s.planned < s.total) {
+              s.planned = s.total;
+            }
+            inputTot.value = s.total;
+            saveState();
+            renderSubjects();
+            updateOverview();
+          };
+          tdTot.appendChild(inputTot);
+          tr.appendChild(tdTot);
+
+          const tdPlan = document.createElement("td");
+          const inputPlan = document.createElement("input");
+          inputPlan.type = "number";
+          inputPlan.className = "mini-input";
+          inputPlan.value = s.planned || s.total;
+          inputPlan.min = 0;
+          inputPlan.onchange = () => {
+            s.planned = Math.max(0, Number(inputPlan.value) || 0);
+            if (s.planned < s.total) {
+              s.planned = s.total;
+              inputPlan.value = s.planned;
+            }
+            saveState();
+            renderSubjects();
+            updateOverview();
+          };
+          tdPlan.appendChild(inputPlan);
+          tr.appendChild(tdPlan);
+
+          const tdPct = document.createElement("td");
+          const pctLabel = document.createElement("div");
+          pctLabel.style.display = "flex";
+          pctLabel.style.flexDirection = "column";
+          pctLabel.style.gap = "3px";
+          const pctText = document.createElement("div");
+          pctText.textContent = s.total > 0 ? pct.toFixed(1) + "%" : "–";
+          pctText.style.fontWeight = "500";
+          pctText.style.fontSize = "12px";
+          const miniBar = document.createElement("div");
+          miniBar.className = "mini-bar";
+          const miniFill = document.createElement("div");
+          miniFill.className = "mini-bar-fill";
+          miniFill.style.width = Math.min(pct, 100).toFixed(1) + "%";
+          miniBar.appendChild(miniFill);
+          pctLabel.appendChild(pctText);
+          pctLabel.appendChild(miniBar);
+          tdPct.appendChild(pctLabel);
+          tr.appendChild(tdPct);
+
+          const tdSafe = document.createElement("td");
+          const safeLabelEl = document.createElement("div");
+          safeLabelEl.style.fontSize = "11px";
+          const safeStrong = document.createElement("span");
+          safeStrong.textContent = safe.toString();
+          safeStrong.style.fontWeight = "500";
+          safeLabelEl.appendChild(safeStrong);
+          safeLabelEl.appendChild(document.createTextNode(" safe"));
+          tdSafe.appendChild(safeLabelEl);
+          tr.appendChild(tdSafe);
+
+          const tdStatus = document.createElement("td");
+          const status = document.createElement("div");
+          status.className = "pill-status";
+          if (isRisky) status.classList.add("risky");
+          else if (isMid) status.classList.add("mid");
+          else if (isSafe) status.classList.add("safe");
+          status.textContent = s.total === 0
+            ? "No data yet"
+            : isRisky
+            ? "Risky"
+            : isMid
+            ? "Borderline"
+            : "On track";
+          tdStatus.appendChild(status);
+          tr.appendChild(tdStatus);
+
+          const tdCircle = document.createElement("td");
+          const miniCircle = document.createElement("div");
+          miniCircle.className = "mini-circle";
+          const inner = document.createElement("div");
+          inner.className = "mini-circle-inner";
+          inner.textContent = s.total > 0 ? Math.round(pct) : "–";
+          const mask = document.createElement("div");
+          mask.className = "mini-circle-mask";
+          miniCircle.appendChild(mask);
+          miniCircle.appendChild(inner);
+          const angle = (pct / 100) * 360;
+          miniCircle.style.setProperty(
+            "--angle",
+            angle.toFixed(1) + "deg"
+          );
+          tdCircle.appendChild(miniCircle);
+          tr.appendChild(tdCircle);
+
+          const tdDel = document.createElement("td");
+          const delBtn = document.createElement("button");
+          delBtn.className = "delete-btn";
+          delBtn.textContent = "Remove";
+          delBtn.onclick = () => {
+            subjects = subjects.filter((x) => x.id !== s.id);
+            saveState();
+            renderSubjects();
+            updateOverview();
+            showToast("Subject removed");
+          };
+          tdDel.appendChild(delBtn);
+          tr.appendChild(tdDel);
+
+          subjectsBody.appendChild(tr);
+        });
+    }
+
+    function loadSampleData() {
+      subjects = [
+        { id: normalizeName("General Medicine"), label: "General Medicine", attended: 23, total: 29, planned: 60 },
+        { id: normalizeName("General Surgery"), label: "General Surgery", attended: 21, total: 27, planned: 50 },
+        { id: normalizeName("OBGYN"), label: "OBGYN", attended: 21, total: 29, planned: 50 },
+        { id: normalizeName("Paediatrics"), label: "Paediatrics", attended: 6, total: 13, planned: 30 },
+        { id: normalizeName("Orthopedics"), label: "Orthopedics", attended: 6, total: 8, planned: 20 },
+        { id: normalizeName("ENT"), label: "ENT", attended: 3, total: 3, planned: 10 },
+        { id: normalizeName("Ophthalmology"), label: "Ophthalmology", attended: 2, total: 3, planned: 15 },
+        { id: normalizeName("Dermatology"), label: "Dermatology", attended: 4, total: 5, planned: 12 },
+        { id: normalizeName("Psychiatry"), label: "Psychiatry", attended: 8, total: 9, planned: 12 },
+        { id: normalizeName("Radiology"), label: "Radiology", attended: 2, total: 2, planned: 8 },
+        { id: normalizeName("Anesthesiology"), label: "Anesthesiology", attended: 1, total: 1, planned: 8 },
+        { id: normalizeName("Pulmonology"), label: "Pulmonology", attended: 2, total: 2, planned: 8 },
+        { id: normalizeName("AETCOM"), label: "AETCOM", attended: 7, total: 9, planned: 20 },
+        { id: normalizeName("Pandemic Module"), label: "Pandemic Module", attended: 3, total: 5, planned: 10 }
+      ];
+      saveState();
+      renderSubjects();
+      updateOverview();
+      showToast("Loaded from PDF data");
+    }
+
+    commandBtn.addEventListener("click", () => {
+      const text = commandInput.value.trim();
+      if (!text) return;
+      applyCommand(text);
+      commandInput.value = "";
+    });
+
+    commandInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        commandBtn.click();
+      }
+    });
+
+    addBtn.addEventListener("click", () => {
+      const name = newName.value.trim();
+      const att = Number(newAttended.value) || 0;
+      const tot = Number(newTotal.value) || 0;
+      const plan = Number(newPlanned.value) || tot;
+      if (!name) {
+        showToast("Add subject name");
+        return;
+      }
+      if (att > tot) {
+        showToast("Attended cannot exceed total");
+        return;
+      }
+      addSubject(name, att, tot, plan);
+      newName.value = "";
+      newAttended.value = "";
+      newTotal.value = "";
+      newPlanned.value = "";
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (!confirm("Reset all subjects for this block?")) return;
+      subjects = [];
+      saveState();
+      renderSubjects();
+      updateOverview();
+      showToast("Block reset");
+    });
+
+    loadSampleBtn.addEventListener("click", loadSampleData);
+
+    exportBtn.addEventListener("click", () => {
+      const data = JSON.stringify(subjects, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "attendance_data.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Exported as JSON");
+    });
+
+    importBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (!Array.isArray(data)) throw new Error("Invalid JSON");
+          subjects = data.map((s) => ({
+            id: s.id || normalizeName(s.label || ""),
+            label: s.label || s.id,
+            attended: Number(s.attended) || 0,
+            total: Number(s.total) || 0,
+            planned: Number(s.planned) || Number(s.total) || 0
+          }));
+          saveState();
+          renderSubjects();
+          updateOverview();
+          showToast("Imported JSON");
+        } catch (err) {
+          showToast("Invalid JSON file");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+
+    clearStorageBtn.addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      showToast("Local storage cleared");
+    });
+
+    filterPills.forEach((pill) => {
+      pill.addEventListener("click", () => {
+        filterPills.forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+        activeFilter = pill.getAttribute("data-filter") || "all";
+        renderSubjects();
+      });
+    });
+
+    searchInput.addEventListener("input", () => {
+      renderSubjects();
+    });
+
+    function init() {
+      loadState();
+      renderSubjects();
+      updateOverview();
+    }
+
+    init();
+  </script>
+</body>
+</html>
